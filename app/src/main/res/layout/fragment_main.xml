@@ -13,12 +13,14 @@
 <TextView
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="List of Devices "
+    android:text="@string/device_list"
     android:gravity="center"
-    android:textSize="25sp"/>
+    android:textSize="@dimen/title_text_size"
+    android:textColor="@color/primary_text"/>
     <ListView
+        android:id="@+id/listview_devices"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
     </ListView>
 

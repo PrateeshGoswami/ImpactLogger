@@ -24,8 +24,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:text="IMPACT LOGGER"
-                android:textSize="30sp"
-                android:textColor="@color/colorPrimaryDark"
+                android:textSize="@dimen/app_name_size"
+                android:textColor="@color/app_name"
                 android:gravity = "center"
                 android:id="@+id/toolbar_title" />
             </android.support.v7.widget.Toolbar>
