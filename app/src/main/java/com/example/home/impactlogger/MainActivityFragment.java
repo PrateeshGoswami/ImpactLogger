@@ -68,10 +68,22 @@ public class MainActivityFragment extends Fragment {
                 String action = intent.getAction();
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    mDeviceAdapter.add(device.getName() + "\n" + device.getAddress());
+
+                    String s = "NOT PAIRED";
+                    for (int a = 0; a < pairedDevices.size(); a++) {
+                        if (device.getName().equals(pairedDevices.get(a))) {
+
+                            s = "PAIRED";
+
+
+                            break;
+                        }
+                    }
+                    mDeviceAdapter.add(device.getName() + "(" + s + ")" + "\n" + device.getAddress());
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
 
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+
 
                 } else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
                     if (btAdapter.getState() == btAdapter.STATE_OFF) {
