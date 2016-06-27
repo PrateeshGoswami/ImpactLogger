@@ -56,7 +56,7 @@ public class MainActivityFragment extends Fragment {
                 R.layout.list_item_device,
                 R.id.list_item_device_textview);
         listView.setAdapter(mDeviceAdapter);
-      
+
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         pairedDevices = new ArrayList<String>();
