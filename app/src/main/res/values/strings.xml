@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">ImpactLogger</string>
     <string name="action_settings">Settings</string>
-    <string name="device_list">LIST OF DEVICES</string>
+    <string name="device_list">PAIRED DEVICES</string>
 </resources>
