@@ -11,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -22,7 +23,7 @@ import java.util.Set;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MainActivityFragment extends Fragment {
+public class MainActivityFragment extends Fragment implements AdapterView.OnItemClickListener{
 
     ArrayAdapter<String> mDeviceAdapter;
     Button scanButton;
@@ -56,6 +57,8 @@ public class MainActivityFragment extends Fragment {
                 R.layout.list_item_device,
                 R.id.list_item_device_textview);
         listView.setAdapter(mDeviceAdapter);
+        listView.setOnItemClickListener(this);
+
 
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -69,17 +72,17 @@ public class MainActivityFragment extends Fragment {
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-                    String s = "NOT PAIRED";
+                    String s = "";
                     for (int a = 0; a < pairedDevices.size(); a++) {
                         if (device.getName().equals(pairedDevices.get(a))) {
 
-                            s = "PAIRED";
+                            s = "(PAIRED)";
 
 
                             break;
                         }
                     }
-                    mDeviceAdapter.add(device.getName() + "(" + s + ")" + "\n" + device.getAddress());
+                    mDeviceAdapter.add(device.getName()  + s + "\n" + device.getAddress());
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
 
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
@@ -154,4 +157,17 @@ public class MainActivityFragment extends Fragment {
     }
 
 
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (mDeviceAdapter.getItem(position).contains("PAIRED")){
+            Toast.makeText(getActivity(), "device is paired", Toast.LENGTH_LONG).show();
+        }
+        else {
+            Toast.makeText(getActivity(), "device is not paired", Toast.LENGTH_LONG).show();
+        }
+        Intent otherIntent = new Intent(getActivity(), ImpactActivity.class)
+                .putExtra(Intent.EXTRA_TEXT,mDeviceAdapter.getItem(position));
+        startActivity(otherIntent);
+
+    }
 }
