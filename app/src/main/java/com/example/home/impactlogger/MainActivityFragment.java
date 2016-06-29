@@ -2,6 +2,7 @@ package com.example.home.impactlogger;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,7 +24,7 @@ import java.util.Set;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MainActivityFragment extends Fragment implements AdapterView.OnItemClickListener{
+public class MainActivityFragment extends Fragment implements AdapterView.OnItemClickListener {
 
     ArrayAdapter<String> mDeviceAdapter;
     Button scanButton;
@@ -58,10 +59,12 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
                 R.id.list_item_device_textview);
         listView.setAdapter(mDeviceAdapter);
         listView.setOnItemClickListener(this);
+        final BluetoothManager bluetoothManager =
+                (BluetoothManager) getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
+        btAdapter = bluetoothManager.getAdapter();
 
 
-
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
+//        btAdapter = BluetoothAdapter.getDefaultAdapter();
         pairedDevices = new ArrayList<String>();
         filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
 
@@ -75,14 +78,11 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
                     String s = "";
                     for (int a = 0; a < pairedDevices.size(); a++) {
                         if (device.getName().equals(pairedDevices.get(a))) {
-
                             s = "(PAIRED)";
-
-
                             break;
                         }
                     }
-                    mDeviceAdapter.add(device.getName()  + s + "\n" + device.getAddress());
+                    mDeviceAdapter.add(device.getName() + s + "\n" + device.getAddress());
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
 
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
@@ -91,7 +91,6 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
                 } else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
                     if (btAdapter.getState() == btAdapter.STATE_OFF) {
                         turnOnBt();
-
                     }
 
                 }
@@ -108,9 +107,7 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
             }
             getPairedDevices();
             startDiscovery();
-
         }
-
 
         return rootView;
 
@@ -159,14 +156,13 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (mDeviceAdapter.getItem(position).contains("PAIRED")){
+        if (mDeviceAdapter.getItem(position).contains("PAIRED")) {
             Toast.makeText(getActivity(), "device is paired", Toast.LENGTH_LONG).show();
-        }
-        else {
+        } else {
             Toast.makeText(getActivity(), "device is not paired", Toast.LENGTH_LONG).show();
         }
         Intent otherIntent = new Intent(getActivity(), ImpactActivity.class)
-                .putExtra(Intent.EXTRA_TEXT,mDeviceAdapter.getItem(position));
+                .putExtra(Intent.EXTRA_TEXT, mDeviceAdapter.getItem(position));
         startActivity(otherIntent);
 
     }
