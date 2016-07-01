@@ -3,11 +3,14 @@ package com.example.home.impactlogger;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,8 +21,10 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -32,11 +37,25 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
     BluetoothAdapter btAdapter;
     Set<BluetoothDevice> devicesArray;
     ArrayList<String> pairedDevices;
+//    public static final UUID MY_UUID = UUID.fromString("fe84-0000-1000-8000-00805f9b34fb");
+    public static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    protected static final int SUCCESS_CONNECT = 0;
     IntentFilter filter;
     BroadcastReceiver receiver;
+    Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case SUCCESS_CONNECT:
+                    Toast.makeText(getActivity(), "Connected", Toast.LENGTH_LONG).show();
 
-    public MainActivityFragment() {
-    }
+
+            }
+        }
+    };
+
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -156,14 +175,70 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (mDeviceAdapter.getItem(position).contains("PAIRED")) {
-            Toast.makeText(getActivity(), "device is paired", Toast.LENGTH_LONG).show();
-        } else {
-            Toast.makeText(getActivity(), "device is not paired", Toast.LENGTH_LONG).show();
+        if (btAdapter.isDiscovering()){
+            btAdapter.cancelDiscovery();
         }
+
+        if (mDeviceAdapter.getItem(position).contains("PAIRED")) {
+            BluetoothDevice selectedDevice = (BluetoothDevice)devicesArray.toArray()[position];
+            ConnectThread connect = new ConnectThread(selectedDevice);
+            connect.start();
+        } else {
+            BluetoothDevice selectedDevice = (BluetoothDevice)devicesArray.toArray()[position];
+            ConnectThread connect = new ConnectThread(selectedDevice);
+            connect.start();        }
         Intent otherIntent = new Intent(getActivity(), ImpactActivity.class)
                 .putExtra(Intent.EXTRA_TEXT, mDeviceAdapter.getItem(position));
         startActivity(otherIntent);
 
+    }
+    private class ConnectThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+
+        public ConnectThread(BluetoothDevice device) {
+            // Use a temporary object that is later assigned to mmSocket,
+            // because mmSocket is final
+            BluetoothSocket tmp = null;
+            mmDevice = device;
+
+            // Get a BluetoothSocket to connect with the given BluetoothDevice
+            try {
+                // MY_UUID is the app's UUID string, also used by the server code
+                tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
+            } catch (IOException e) { }
+            mmSocket = tmp;
+        }
+
+        public void run() {
+            // Cancel discovery because it will slow down the connection
+            btAdapter.cancelDiscovery();
+
+            try {
+                // Connect the device through the socket. This will block
+                // until it succeeds or throws an exception
+                mmSocket.connect();
+            } catch (IOException connectException) {
+                // Unable to connect; close the socket and get out
+                try {
+                    mmSocket.close();
+                } catch (IOException closeException) { }
+                return;
+            }
+
+            // Do work to manage the connection (in a separate thread)
+            manageConnectedSocket(mmSocket);
+            mHandler.obtainMessage(SUCCESS_CONNECT);
+        }
+        public void manageConnectedSocket(BluetoothSocket mmSocket){
+
+        }
+
+        /** Will cancel an in-progress connection, and close the socket */
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
     }
 }
