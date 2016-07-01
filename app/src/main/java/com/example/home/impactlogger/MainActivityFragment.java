@@ -22,6 +22,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -38,8 +40,11 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
     Set<BluetoothDevice> devicesArray;
     ArrayList<String> pairedDevices;
 //    public static final UUID MY_UUID = UUID.fromString("fe84-0000-1000-8000-00805f9b34fb");
-    public static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+//    public static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+//    public static final UUID MY_UUID = UUID.fromString("00002221-0000-1000-8000-00805f9b34fb");
+    public static final UUID MY_UUID = UUID.fromString("00002222-0000-1000-8000-00805f9b34fb");
     protected static final int SUCCESS_CONNECT = 0;
+    protected static final int MESSAGE_READ = 1;
     IntentFilter filter;
     BroadcastReceiver receiver;
     Handler mHandler = new Handler(){
@@ -48,9 +53,16 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
             super.handleMessage(msg);
             switch (msg.what){
                 case SUCCESS_CONNECT:
+                    ConnectedThread connectedThread = new ConnectedThread((BluetoothSocket) msg.obj);
                     Toast.makeText(getActivity(), "Connected", Toast.LENGTH_LONG).show();
-
-
+                    String s = "Successfully connected";
+                    connectedThread.write(s.getBytes());
+                    break;
+                case MESSAGE_READ:
+                    byte[] readBuf = (byte[])msg.obj;
+                    String string = new String(readBuf);
+                    Toast.makeText(getActivity(), string, Toast.LENGTH_LONG).show();
+                    break;
             }
         }
     };
@@ -187,9 +199,9 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
             BluetoothDevice selectedDevice = (BluetoothDevice)devicesArray.toArray()[position];
             ConnectThread connect = new ConnectThread(selectedDevice);
             connect.start();        }
-        Intent otherIntent = new Intent(getActivity(), ImpactActivity.class)
-                .putExtra(Intent.EXTRA_TEXT, mDeviceAdapter.getItem(position));
-        startActivity(otherIntent);
+//        Intent otherIntent = new Intent(getActivity(), ImpactActivity.class)
+//                .putExtra(Intent.EXTRA_TEXT, mDeviceAdapter.getItem(position));
+//        startActivity(otherIntent);
 
     }
     private class ConnectThread extends Thread {
@@ -227,14 +239,67 @@ public class MainActivityFragment extends Fragment implements AdapterView.OnItem
             }
 
             // Do work to manage the connection (in a separate thread)
-            manageConnectedSocket(mmSocket);
-            mHandler.obtainMessage(SUCCESS_CONNECT);
+//            manageConnectedSocket(mmSocket);
+            mHandler.obtainMessage(SUCCESS_CONNECT,mmSocket).sendToTarget();
         }
-        public void manageConnectedSocket(BluetoothSocket mmSocket){
-
-        }
+//        private void manageConnectedSocket(BluetoothSocket mmSocket){
+//
+//        }
 
         /** Will cancel an in-progress connection, and close the socket */
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
+    }
+    private class ConnectedThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+
+        public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the input and output streams, using temp objects because
+            // member streams are final
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) { }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[1024];  // buffer store for the stream
+            int bytes; // bytes returned from read()
+
+            // Keep listening to the InputStream until an exception occurs
+            while (true) {
+                try {
+                    // Read from the InputStream
+                    bytes = mmInStream.read(buffer);
+                    // Send the obtained bytes to the UI activity
+                    mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
+                            .sendToTarget();
+                } catch (IOException e) {
+                    break;
+                }
+            }
+        }
+
+        /* Call this from the main activity to send data to the remote device */
+        public void write(byte[] bytes) {
+            try {
+                mmOutStream.write(bytes);
+            } catch (IOException e) { }
+        }
+
+        /* Call this from the main activity to shutdown the connection */
         public void cancel() {
             try {
                 mmSocket.close();
